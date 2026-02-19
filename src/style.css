@@ -1,0 +1,233 @@
+@import 'hack-font/build/web/hack.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-dark: #1B779B;
+  --accent-cyan: #00f0ff;
+  --accent-magenta: #ff00aa;
+  --accent-gold: #ffcc00;
+  --text-primary: #ffffff;
+  --text-muted: #a0c0e0;
+  --panel-bg: rgba(10, 30, 60, 0.9);
+  --panel-border: rgba(150, 180, 220, 0.3);
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+#title {
+  font-family: 'Hack', monospace;
+}
+
+#title h1 {
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+#title h1 .accent {
+  color: #ff0000;
+}
+
+#title .subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+
+#path-info {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  letter-spacing: 0.3px;
+}
+
+#path-info.has-path {
+  color: var(--accent-cyan);
+}
+
+#stats {
+  display: flex;
+  gap: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+#stats span {
+  padding: 6px 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+}
+
+#fps {
+  color: var(--accent-cyan) !important;
+}
+
+/* Controls legend – styles matched to farmerjohn.art/data-visualization/whiskeys */
+#legend {
+  width: 200px;
+  font-size: 12px;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: #ccc;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  #legend {
+    display: none;
+  }
+}
+
+#legend .legend-title {
+  font-size: 18px;
+}
+
+#legend .backdrop {
+  color: #ccc;
+  border: 1px solid #ccc;
+  background-color: hsla(0, 0%, 100%, 0.1);
+  padding: 5px;
+  margin-top: 5px;
+}
+
+#legend table {
+  width: 100%;
+}
+
+#legend table thead tr {
+  font-weight: bold;
+}
+
+#legend table thead tr.divider {
+  vertical-align: top;
+}
+
+#legend table tr.divider {
+  height: 25px;
+  vertical-align: bottom;
+}
+
+#legend table tr td {
+  width: 50%;
+}
+
+#legend table tr td:last-of-type {
+  text-align: right;
+}
+
+#legend .key {
+  /* Match example: key column is plain text like "left click" / "scroll" */
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font-weight: inherit;
+}
+
+/* lil-gui customization */
+.lil-gui {
+  --background-color: rgba(15, 15, 25, 0.95) !important;
+  --text-color: #e8e8f0 !important;
+  --title-background-color: rgba(0, 240, 255, 0.1) !important;
+  --title-text-color: #00f0ff !important;
+  --widget-color: rgba(100, 100, 140, 0.3) !important;
+  --hover-color: rgba(0, 240, 255, 0.2) !important;
+  --focus-color: #00f0ff !important;
+  --number-color: #ffcc00 !important;
+  --string-color: #ff00aa !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(100, 100, 140, 0.2) !important;
+  border-radius: 8px !important;
+}
+
+.lil-gui .title {
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Loading state */
+.loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent-cyan);
+  font-size: 14px;
+}
+
+.loading::after {
+  content: '';
+  animation: dots 1.5s infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: '.'; }
+  40% { content: '..'; }
+  60%, 100% { content: '...'; }
+}
+

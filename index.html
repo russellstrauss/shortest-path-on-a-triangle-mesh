@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shortest Path on a Triangle Mesh</title>
+  <link rel="stylesheet" href="/src/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <canvas id="canvas"></canvas>
+    <div id="overlay">
+      <div id="title">
+        <h1>Shortest Path on a Triangle Mesh</h1>
+        <p id="path-info">Click two vertices on the mesh to see the shortest path.</p>
+      </div>
+    </div>
+    <div id="legend">
+      <span class="legend-title">Controls</span>
+      <div class="backdrop">
+        <table>
+          <thead>
+            <tr class="divider">
+              <td>Function</td>
+              <td>Key</td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="divider">
+              <td>Triangle Mesh mode</td>
+              <td><span class="key">T</span></td>
+            </tr>
+            <tr>
+              <td>Vertex mode</td>
+              <td><span class="key">V</span></td>
+            </tr>
+            <tr>
+              <td>Toggle Model</td>
+              <td><span class="key">H</span></td>
+            </tr>
+            <tr>
+              <td>Reset</td>
+              <td><span class="key">R</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <input type="file" id="model-input" accept=".obj,.stl" style="display: none;">
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
+

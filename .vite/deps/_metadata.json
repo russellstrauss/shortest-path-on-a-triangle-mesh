@@ -1,0 +1,43 @@
+{
+  "hash": "7b6ecc4f",
+  "configHash": "68a0a089",
+  "lockfileHash": "8441f56f",
+  "browserHash": "cfdf32de",
+  "optimized": {
+    "three": {
+      "src": "../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "b4b40c9b",
+      "needsInterop": false
+    },
+    "three/addons/controls/OrbitControls.js": {
+      "src": "../../node_modules/three/examples/jsm/controls/OrbitControls.js",
+      "file": "three_addons_controls_OrbitControls__js.js",
+      "fileHash": "e2c91325",
+      "needsInterop": false
+    },
+    "three/addons/loaders/OBJLoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/OBJLoader.js",
+      "file": "three_addons_loaders_OBJLoader__js.js",
+      "fileHash": "aef47477",
+      "needsInterop": false
+    },
+    "three/addons/loaders/STLLoader.js": {
+      "src": "../../node_modules/three/examples/jsm/loaders/STLLoader.js",
+      "file": "three_addons_loaders_STLLoader__js.js",
+      "fileHash": "2a1beade",
+      "needsInterop": false
+    },
+    "lil-gui": {
+      "src": "../../node_modules/lil-gui/dist/lil-gui.esm.js",
+      "file": "lil-gui.js",
+      "fileHash": "1cd11229",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-UGD7UY7I": {
+      "file": "chunk-UGD7UY7I.js"
+    }
+  }
+}
