@@ -779,6 +779,7 @@ class App {
     this.viewingObject.visible = this.params.showModel;
     this.scene.add(this.viewingObject);
     this.setDisplayMode(this.displayMode);
+    this.frameModelInView();
   }
 
   loadSelectedModel() {
@@ -847,6 +848,7 @@ class App {
         this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
+        this.frameModelInView();
       },
       (progress) => {
         if (progress.lengthComputable) {
@@ -907,6 +909,7 @@ class App {
         this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
+        this.frameModelInView();
         URL.revokeObjectURL(url);
       });
     } else if (extension === 'stl') {
@@ -925,6 +928,7 @@ class App {
         this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
+        this.frameModelInView();
         URL.revokeObjectURL(url);
       });
     }
@@ -935,6 +939,23 @@ class App {
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center);
     model.position.y = 0; // Place on ground
+  }
+
+  /**
+   * Frame the current model in the viewport: point camera at its center and set distance so it fits.
+   */
+  frameModelInView() {
+    if (!this.viewingObject) return;
+    const box = new THREE.Box3().setFromObject(this.viewingObject);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
+    const fovRad = (this.camera.fov * Math.PI) / 180;
+    const distance = Math.abs(maxDim / (2 * Math.tan(fovRad / 2))) * 1.4;
+    this.controls.target.copy(center);
+    const direction = new THREE.Vector3(1, 0.6, 1).normalize();
+    this.camera.position.copy(center).addScaledVector(direction, distance);
+    this.params.starRadius = this.camera.position.length();
   }
 
   updateModelScale() {
