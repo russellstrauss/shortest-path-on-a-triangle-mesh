@@ -1,5 +1,5 @@
 {
-  "name": "log-spiral-visualization",
+  "name": "shortest-path-on-a-triangle-mesh",
   "version": "1.0.0",
   "description": "Logarithmic Spiral 3D Visualization - Three.js port",
   "type": "module",

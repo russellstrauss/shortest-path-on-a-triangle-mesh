@@ -12,7 +12,6 @@ class App {
   constructor() {
     this.params = {
       objectScale: 4,
-      showModel: true,
       modelChoice: 'bunny',
       starRadius: 800,
       pathExtrudeOffset: 0.01,
@@ -148,7 +147,7 @@ class App {
   }
 
   isClickOffMesh(clientX, clientY) {
-    if (!this.viewingObject || !this.params.showModel) return true;
+    if (!this.viewingObject) return true;
     const size = this.renderer.getSize(this._rendererSize);
     this.mouseNDC.x = (clientX / size.x) * 2 - 1;
     this.mouseNDC.y = -(clientY / size.y) * 2 + 1;
@@ -169,7 +168,7 @@ class App {
     const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist > this._clickDragThreshold) return;
 
-    if (!this.viewingObject || !this.params.showModel) return;
+    if (!this.viewingObject) return;
 
     if (this.vertexHighlight.visible && this._lastHitMesh != null && this._lastHitVertexIndex >= 0) {
       const position = this.vertexHighlight.position.clone();
@@ -499,7 +498,7 @@ class App {
   }
 
   onMouseMove(event) {
-    if (!this.viewingObject || !this.params.showModel) {
+    if (!this.viewingObject) {
       this.vertexHighlight.visible = false;
       return;
     }
@@ -605,10 +604,6 @@ class App {
     viewFolder.add(this.params, 'starRadius', 100, 10000, 50).name('Star Radius').onChange(() => this.addStars());
     viewFolder.open();
 
-    const togglesFolder = this.gui.addFolder('Toggles');
-    togglesFolder.add(this.params, 'showModel').name('Show Model (H)').onChange(() => this.toggleModelVisibility());
-    togglesFolder.open();
-
     const modelFolder = this.gui.addFolder('Model');
     modelFolder.add(this.params, 'modelChoice', this.modelOptions).name('Default Model').onChange(() => this.loadSelectedModel());
     modelFolder.add(this.params, 'loadModel').name('📁 Load Custom...');
@@ -631,11 +626,6 @@ class App {
       switch(e.key.toLowerCase()) {
         case 'r':
           this.reset();
-          break;
-        case 'h':
-          this.params.showModel = !this.params.showModel;
-          this.toggleModelVisibility();
-          if (this.gui) this.gui.controllersRecursive().forEach(c => c.updateDisplay());
           break;
         case 't':
           this.setDisplayMode('mesh');
@@ -776,7 +766,6 @@ class App {
     this.pickableMeshes = pickableMeshes;
     this.viewingObject.userData.baseScale = this.baseModelSize;
     this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
-    this.viewingObject.visible = this.params.showModel;
     this.scene.add(this.viewingObject);
     this.setDisplayMode(this.displayMode);
     this.frameModelInView();
@@ -845,7 +834,6 @@ class App {
         this.viewingObject.userData.baseScale = this.baseModelSize;
         this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
         this.centerModel(this.viewingObject);
-        this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
         this.frameModelInView();
@@ -906,7 +894,6 @@ class App {
         this.viewingObject.userData.baseScale = this.baseModelSize;
         this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
         this.centerModel(this.viewingObject);
-        this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
         this.frameModelInView();
@@ -925,10 +912,8 @@ class App {
         this.viewingObject.userData.baseScale = this.baseModelSize;
         this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
         this.centerModel(this.viewingObject);
-        this.viewingObject.visible = this.params.showModel;
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
-        this.frameModelInView();
         URL.revokeObjectURL(url);
       });
     }
@@ -965,15 +950,8 @@ class App {
     }
   }
 
-  toggleModelVisibility() {
-    if (this.viewingObject) {
-      this.viewingObject.visible = this.params.showModel;
-    }
-  }
-
   reset() {
     this.params.objectScale = 4;
-    this.params.showModel = true;
     this.selectedVertices = [];
     this.updateSelectedVertexMarkers();
     this.clearPathLine();
