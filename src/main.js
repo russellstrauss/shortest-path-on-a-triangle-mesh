@@ -52,7 +52,7 @@ class App {
       0.1,
       50000
     );
-    this.camera.position.set(500, 300, 500);
+    this.camera.position.set(0, 100, 500);
     this.params.starRadius = this.camera.position.length();
 
     // Renderer
@@ -992,11 +992,16 @@ class App {
     const box = new THREE.Box3().setFromObject(this.viewingObject);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z, 1e-6);
     const fovRad = (this.camera.fov * Math.PI) / 180;
-    const distance = Math.abs(maxDim / (2 * Math.tan(fovRad / 2))) * 1.4;
+    const aspect = this.camera.aspect;
+    // For side view (camera on +Z), view plane extents are X and Y. Fit both with aspect ratio.
+    const fitVertical = size.y / (2 * Math.tan(fovRad / 2));
+    const fitHorizontal = size.x / (2 * Math.tan(fovRad / 2) * aspect);
+    const distance = Math.max(fitVertical, fitHorizontal, 1e-6) * 1.6;
+    // Aim slightly below bbox center so the model sits a bit higher in the frame (less empty space above).
+    center.y -= size.y * 0.15;
     this.controls.target.copy(center);
-    const direction = new THREE.Vector3(1, 0.6, 1).normalize();
+    const direction = new THREE.Vector3(0, 0.2, 1).normalize();
     this.camera.position.copy(center).addScaledVector(direction, distance);
     this.params.starRadius = this.camera.position.length();
     this.addStars();
