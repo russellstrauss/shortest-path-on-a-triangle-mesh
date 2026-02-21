@@ -12,7 +12,7 @@ class App {
   constructor() {
     this.params = {
       objectScale: 4,
-      modelChoice: 'bunny',
+      modelChoice: 'dragon-low',
       starRadius: 800,
       pathExtrudeOffset: 0.01,
 	  pointSize: 3,
@@ -24,6 +24,8 @@ class App {
     
     // Base model size before scale multiplier is applied
     this.baseModelSize = 100;
+    // Fixed-size bounding box (each side) for exact-box scaling; models are scaled to fit this box
+    this.targetBoundingSize = 100;
 
     this.clock = new THREE.Clock();
     this.frameCount = 0;
@@ -72,6 +74,7 @@ class App {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.25;
     this.controls.target.set(0, 0, 0);
+    this.controls.maxDistance = 10000; // max zoom-out distance from target
 
     // Vertex highlight: raycaster and mouse for nearest-vertex picking (first layer only)
     this.raycaster = new THREE.Raycaster();
@@ -91,6 +94,8 @@ class App {
     this._lastHitMesh = null;
     this._lastHitVertexIndex = -1;
     this.pathLine = null; // THREE.Line for shortest path
+    this.pathLineStartWorld = null; // world position of path start (for marker)
+    this.pathLineEndWorld = null;   // world position of path end (for marker)
     this.displayMode = 'mesh'; // 'points' = vertex mode, 'mesh' = wireframe mode
     this.pickableMeshes = []; // Invisible meshes used for raycast/path (when model is shown as Points)
     this.renderer.domElement.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -121,12 +126,15 @@ class App {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(6, 3)); // 2 vertices
     const material = new THREE.PointsMaterial({
       color: 0x0099dd,
-      size: 10,
-      sizeAttenuation: false
+      size: 20,
+      sizeAttenuation: false,
+      depthTest: false,
+      transparent: true,
+      opacity: 1
     });
     const points = new THREE.Points(geometry, material);
     points.visible = false;
-    points.renderOrder = 2;
+    points.renderOrder = 100; // after wireframe (transparent pass) so markers appear on top
     return points;
   }
 
@@ -135,6 +143,15 @@ class App {
     const count = this.selectedVertices.length;
     if (count === 0) {
       this.selectedVertexMarkers.visible = false;
+      return;
+    }
+    // When we have 2 vertices and a path, place markers at path endpoints so the path doesn't cover them
+    if (count === 2 && this.pathLineStartWorld && this.pathLineEndWorld) {
+      posAttr.setXYZ(0, this.pathLineStartWorld.x, this.pathLineStartWorld.y, this.pathLineStartWorld.z);
+      posAttr.setXYZ(1, this.pathLineEndWorld.x, this.pathLineEndWorld.y, this.pathLineEndWorld.z);
+      posAttr.needsUpdate = true;
+      this.selectedVertexMarkers.geometry.setDrawRange(0, 2);
+      this.selectedVertexMarkers.visible = true;
       return;
     }
     for (let i = 0; i < count; i++) {
@@ -324,6 +341,8 @@ class App {
       this.pathLine.material.dispose();
       this.pathLine = null;
     }
+    this.pathLineStartWorld = null;
+    this.pathLineEndWorld = null;
     const pathInfoEl = document.getElementById('path-info');
     if (pathInfoEl) {
       pathInfoEl.textContent = 'Click two vertices on the mesh to see the shortest path.';
@@ -405,6 +424,11 @@ class App {
     this.pathLine = new Line2(pathGeometry, pathMaterial);
     this.pathLine.renderOrder = 10;
     this.scene.add(this.pathLine);
+
+    // Store path endpoints (world space) so vertex markers can sit on them
+    this.pathLineStartWorld = points[0].clone();
+    this.pathLineEndWorld = points[points.length - 1].clone();
+    this.updateSelectedVertexMarkers();
 
     const pathInfoEl = document.getElementById('path-info');
     if (pathInfoEl) {
@@ -556,16 +580,26 @@ class App {
       this.starPoints.material.dispose();
       this.starPoints = null;
     }
-    const radius = this.params.starRadius;
+    // Exclusion radius: no stars closer than this (e.g. camera distance) so they don't get in the way.
+    const exclusionRadius = this.params.starRadius;
+    const outerRadius = 10000;
+    if (exclusionRadius >= outerRadius) {
+      return;
+    }
     const geometry = new THREE.BufferGeometry();
     const vertices = [];
-    for (let i = 0; i < 500; i++) {
+    const count = 500;
+    for (let i = 0; i < count; i++) {
       const phi = Math.acos(2 * Math.random() - 1);
       const theta = 2 * Math.PI * Math.random();
       const x = Math.sin(phi) * Math.cos(theta);
       const y = Math.sin(phi) * Math.sin(theta);
       const z = Math.cos(phi);
-      vertices.push(x * radius, y * radius, z * radius);
+      // Uniform in shell: r in [exclusionRadius, outerRadius] by volume (r^3)
+      const rMin3 = exclusionRadius * exclusionRadius * exclusionRadius;
+      const rMax3 = outerRadius * outerRadius * outerRadius;
+      const r = Math.pow(rMin3 + (rMax3 - rMin3) * Math.random(), 1 / 3);
+      vertices.push(x * r, y * r, z * r);
     }
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     const particles = new THREE.Points(geometry, new THREE.PointsMaterial({ color: 0x888888 }));
@@ -774,8 +808,7 @@ class App {
     ], 2);
     this.viewingObject = group;
     this.pickableMeshes = pickableMeshes;
-    this.viewingObject.userData.baseScale = this.baseModelSize;
-    this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
+    this.applyExactBoxScale(this.viewingObject);
     this.scene.add(this.viewingObject);
     this.setDisplayMode(this.displayMode);
     this.frameModelInView();
@@ -841,8 +874,7 @@ class App {
         const { group, pickableMeshes } = this.buildPointsViewFromMeshes(obj, this.params.pointSize);
         this.viewingObject = group;
         this.pickableMeshes = pickableMeshes;
-        this.viewingObject.userData.baseScale = this.baseModelSize;
-        this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
+        this.applyExactBoxScale(this.viewingObject);
         this.centerModel(this.viewingObject);
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
@@ -901,8 +933,7 @@ class App {
         const { group, pickableMeshes } = this.buildPointsViewFromMeshes(obj, 1.5);
         this.viewingObject = group;
         this.pickableMeshes = pickableMeshes;
-        this.viewingObject.userData.baseScale = this.baseModelSize;
-        this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
+        this.applyExactBoxScale(this.viewingObject);
         this.centerModel(this.viewingObject);
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
@@ -919,14 +950,31 @@ class App {
         ], 1.5);
         this.viewingObject = group;
         this.pickableMeshes = pickableMeshes;
-        this.viewingObject.userData.baseScale = this.baseModelSize;
-        this.viewingObject.scale.setScalar(this.baseModelSize * this.params.objectScale);
+        this.applyExactBoxScale(this.viewingObject);
         this.centerModel(this.viewingObject);
         this.scene.add(this.viewingObject);
         this.setDisplayMode(this.displayMode);
         URL.revokeObjectURL(url);
       });
     }
+  }
+
+  /**
+   * Scale the group so its bounding box fits exactly into a fixed-size box (targetBoundingSize per axis).
+   * Stores userData.baseScale as a Vector3 for non-uniform scale; updateModelScale applies objectScale on top.
+   */
+  applyExactBoxScale(group) {
+    const box = new THREE.Box3().setFromObject(group);
+    const size = box.getSize(new THREE.Vector3());
+    const e = 1e-6;
+    const t = this.targetBoundingSize;
+    const baseScale = new THREE.Vector3(
+      t / Math.max(size.x, e),
+      t / Math.max(size.y, e),
+      t / Math.max(size.z, e)
+    );
+    group.userData.baseScale = baseScale;
+    group.scale.copy(baseScale).multiplyScalar(this.params.objectScale);
   }
 
   centerModel(model) {
@@ -951,11 +999,15 @@ class App {
     const direction = new THREE.Vector3(1, 0.6, 1).normalize();
     this.camera.position.copy(center).addScaledVector(direction, distance);
     this.params.starRadius = this.camera.position.length();
+    this.addStars();
   }
 
   updateModelScale() {
-    if (this.viewingObject) {
-      const baseScale = this.viewingObject.userData.baseScale || this.baseModelSize;
+    if (!this.viewingObject) return;
+    const baseScale = this.viewingObject.userData.baseScale ?? this.baseModelSize;
+    if (baseScale instanceof THREE.Vector3) {
+      this.viewingObject.scale.copy(baseScale).multiplyScalar(this.params.objectScale);
+    } else {
       this.viewingObject.scale.setScalar(baseScale * this.params.objectScale);
     }
   }
