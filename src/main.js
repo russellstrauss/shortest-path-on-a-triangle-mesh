@@ -261,37 +261,46 @@ class App {
   }
 
   /**
-   * Dijkstra: shortest path from start to end. Returns { distance, path } or null if no path.
+   * A* shortest path from start to end. Returns { distance, path } or null if no path.
+   * Uses Euclidean distance to goal as admissible heuristic to expand fewer nodes than Dijkstra.
    */
-  dijkstra(graph, start, end) {
-    const dist = new Map();
-    const prev = new Map();
-    const Q = new Set(graph.keys());
-    dist.set(start, 0);
-    for (const v of Q) {
-      if (v !== start) dist.set(v, Infinity);
-    }
+  astar(graph, start, end, geometry) {
+    const posAttr = geometry.attributes.position;
+    if (!posAttr) return null;
+    const v0 = new THREE.Vector3();
+    const endPos = new THREE.Vector3();
+    endPos.fromBufferAttribute(posAttr, end);
 
-    while (Q.size > 0) {
+    const heuristic = (v) => {
+      v0.fromBufferAttribute(posAttr, v);
+      return v0.distanceTo(endPos);
+    };
+
+    const g = new Map(); // g(n) = cost from start to n
+    const prev = new Map();
+    g.set(start, 0);
+    const openSet = new Set([start]);
+
+    while (openSet.size > 0) {
       let u = -1;
-      let best = Infinity;
-      for (const v of Q) {
-        const d = dist.get(v);
-        if (d < best) {
-          best = d;
+      let bestF = Infinity;
+      for (const v of openSet) {
+        const f = g.get(v) + heuristic(v);
+        if (f < bestF) {
+          bestF = f;
           u = v;
         }
       }
       if (u === -1 || u === end) break;
-      Q.delete(u);
+      openSet.delete(u);
       const neighbors = graph.get(u);
       if (!neighbors) continue;
       for (const { neighbor, distance: w } of neighbors) {
-        if (!Q.has(neighbor)) continue;
-        const alt = dist.get(u) + w;
-        if (alt < dist.get(neighbor)) {
-          dist.set(neighbor, alt);
+        const tentativeG = g.get(u) + w;
+        if (tentativeG < (g.get(neighbor) ?? Infinity)) {
+          g.set(neighbor, tentativeG);
           prev.set(neighbor, u);
+          openSet.add(neighbor);
         }
       }
     }
@@ -304,7 +313,8 @@ class App {
     }
     if (cur !== start) return null;
     path.unshift(start);
-    return { distance: dist.get(end), path };
+    const totalDist = g.get(end);
+    return totalDist === undefined ? null : { distance: totalDist, path };
   }
 
   clearPathLine() {
@@ -333,7 +343,7 @@ class App {
     const startCanonical = vertexToCanonical.get(a.vertexIndex);
     const endCanonical = vertexToCanonical.get(b.vertexIndex);
     if (startCanonical === undefined || endCanonical === undefined || !graph.has(startCanonical) || !graph.has(endCanonical)) return;
-    const result = this.dijkstra(graph, startCanonical, endCanonical);
+    const result = this.astar(graph, startCanonical, endCanonical, geometry);
     if (!result || result.path.length < 2) return;
 
     const posAttr = geometry.attributes.position;
